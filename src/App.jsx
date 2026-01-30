@@ -5,6 +5,7 @@ import HomePage from "./pages/home.jsx";
 import AboutPage from "./pages/about.jsx";
 import NotFoundPage from "./pages/not-found.jsx";
 import CoinDetailsPage from "./pages/coin-details.jsx";
+import ScrollToTopButton from "./components/ScrollToTopButton.jsx";
 
 const API_URL = import.meta.env.VITE_COINS_API_URL;
 
@@ -20,7 +21,7 @@ const App = () => {
     const fetchCoins = async () => {
       try {
         const response = await fetch(
-          `${API_URL}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
+          `${API_URL}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`,
         );
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -43,7 +44,7 @@ const App = () => {
 
       <Routes>
         <Route
-          path="/"
+          path='/'
           element={
             <HomePage
               coins={coins}
@@ -58,10 +59,11 @@ const App = () => {
             />
           }
         />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/coin/:id" element={<CoinDetailsPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/about' element={<AboutPage />} />
+        <Route path='/coin/:id' element={<CoinDetailsPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>
+      <ScrollToTopButton />
     </>
   );
 };
