@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route } from 'react-router';
 import Header from './components/Header';
 import HomePage from './pages/home';
@@ -6,51 +6,28 @@ import AboutPage from './pages/about';
 import NotFoundPage from './pages/not-found';
 import CoinDetailsPage from './pages/coin-details';
 import ScrollToTopButton from './components/ScrollToTopButton';
-import type { CoinMarket, MarketOrder } from './types/coingecko';
-
-const API_URL = import.meta.env.VITE_COINS_API_URL;
+import type { MarketOrder } from './types/coingecko';
+import { useMarkets } from './hooks/useMarkets';
 
 const App = () => {
-  const [coins, setCoins] = useState<CoinMarket[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState<number>(10);
   const [filter, setFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<MarketOrder>('market_cap_desc');
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const {
+    data: coins = [],
+    isPending,
+    isFetching,
+    error,
+  } = useMarkets(limit, sortBy);
 
-    const fetchCoins = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(
-          `${API_URL}&order=${sortBy}&per_page=${limit}&page=1&sparkline=false`,
-          { signal: controller.signal },
-        );
-
-        if (!response.ok)
-          throw new Error(`CoinGecko error (${response.status})`);
-
-        const data: CoinMarket[] = await response.json();
-        setCoins(data);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoins();
-    return () => controller.abort();
-  }, [limit, sortBy]);
+  const errMsg =
+    error instanceof Error ? error.message : error ? 'Unknown error' : null;
 
   return (
     <>
       <Header />
+
       <Routes>
         <Route
           path='/'
@@ -63,8 +40,10 @@ const App = () => {
               setLimit={setLimit}
               sortBy={sortBy}
               setSortBy={setSortBy}
-              loading={loading}
-              error={error}
+              loading={isPending} // initial load spinner
+              // optional: show a small “refreshing” indicator in HomePage using isFetching
+              error={errMsg}
+              // you can also pass isFetching if you want
             />
           }
         />
@@ -72,6 +51,7 @@ const App = () => {
         <Route path='/coin/:id' element={<CoinDetailsPage />} />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
+
       <ScrollToTopButton />
     </>
   );
