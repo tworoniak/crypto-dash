@@ -68,6 +68,7 @@ src/
   hooks/
     useCoinDetails.ts
     useMarkets.ts
+    useScrollPosition.ts
     useWatchlist.ts
 
   pages/
