@@ -1,4 +1,4 @@
-# React + Vite
+# 💸 CryptoDash v1.0
 
 ---
 
