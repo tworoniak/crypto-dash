@@ -1,94 +1,53 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import Spinner from '../components/Spinner';
 import CoinChart from '../components/CoinChart';
-import type { CoinDetails } from '../types/coinDetails';
+import { useCoinDetails } from '../hooks/useCoinDetails';
 
-const API_URL = import.meta.env.VITE_COIN_API_URL;
-
-type RouteParams = {
-  id: string;
-};
+type RouteParams = { id: string };
 
 const CoinDetailsPage = () => {
   const { id } = useParams<RouteParams>();
 
   if (!id) {
-    return <div className='error'>Invalid coin ID.</div>;
+    return (
+      <div className='coin-details-container'>
+        <Link to='/'>Back to Home</Link>
+        <div className='error'>Invalid coin ID.</div>
+      </div>
+    );
   }
 
-  const [coin, setCoin] = useState<CoinDetails | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: coin, isPending, isFetching, error } = useCoinDetails(id);
 
-  useEffect(() => {
-    if (!id) {
-      setCoin(null);
-      setLoading(false);
-      setError('Missing coin id.');
-      return;
-    }
+  const errMsg =
+    error instanceof Error ? error.message : error ? 'Unknown error' : null;
 
-    const controller = new AbortController();
-
-    const fetchCoinDetails = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`${API_URL}/${id}`, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`CoinGecko error (${response.status})`);
-        }
-
-        const data: CoinDetails = await response.json();
-        setCoin(data);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoinDetails();
-
-    return () => controller.abort();
-  }, [id]);
-
-  const title = coin
-    ? `${coin.name} (${coin.symbol.toUpperCase()})`
-    : 'Coin Details';
-
-  // small helper: avoid crashing on empty descriptions
   const description = (() => {
     const text = coin?.description?.en?.trim();
     if (!text) return '';
-
-    const parts = text.split('. ');
-    const firstSentence = parts[0];
-
+    const firstSentence = text.split('. ')[0] ?? '';
     if (!firstSentence) return '';
-
     return firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`;
   })();
 
   return (
     <div className='coin-details-container'>
       <Link to='/'>Back to Home</Link>
-      <h1 className='coin-details-title'>{title}</h1>
 
-      {loading && <Spinner />}
+      <h1 className='coin-details-title'>
+        {coin ? `${coin.name} (${coin.symbol.toUpperCase()})` : 'Coin Details'}
+      </h1>
 
-      {!loading && error && <div className='error'>❌ Error: {error}</div>}
+      {isPending && <Spinner />}
 
-      {!loading && !error && !coin && <p>Coin not found.</p>}
+      {!isPending && errMsg && <div className='error'>❌ Error: {errMsg}</div>}
 
-      {!loading && !error && coin && (
+      {!isPending && !errMsg && !coin && <p>Coin not found.</p>}
+
+      {!isPending && !errMsg && coin && (
         <>
+          {isFetching && <div className='text-sm opacity-70'>Refreshing…</div>}
+
           <img
             src={coin.image.large}
             alt={coin.name}
@@ -133,7 +92,6 @@ const CoinDetailsPage = () => {
             </h4>
           </div>
 
-          {/* id is guaranteed here */}
           <CoinChart coinId={id} />
 
           <div className='coin-details-links'>
@@ -148,7 +106,6 @@ const CoinDetailsPage = () => {
                 </a>
               </p>
             )}
-
             {coin.links.blockchain_site[0] && (
               <p>
                 <a
@@ -160,7 +117,6 @@ const CoinDetailsPage = () => {
                 </a>
               </p>
             )}
-
             {coin.links.official_forum_url[0] && (
               <p>
                 <a
@@ -172,7 +128,6 @@ const CoinDetailsPage = () => {
                 </a>
               </p>
             )}
-
             {coin.categories.length > 0 && (
               <p>Categories: {coin.categories.join(', ')}</p>
             )}
