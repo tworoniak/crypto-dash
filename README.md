@@ -106,3 +106,13 @@ Planned enhancements:
 - 📱 Responsive dashboard refinements
 
 ---
+
+## 📚 Lessons Learned
+
+- Migrating a React app from JS → strict TypeScript
+- Modeling complex third-party API responses safely
+- Implementing modern caching with TanStack Query v5
+- Handling route param typing safely
+- Designing scalable frontend architecture
+
+---
